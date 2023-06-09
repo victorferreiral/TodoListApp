@@ -13,7 +13,7 @@ db.serialize(() => {
     db.all('SELECT * FROM tasks', (err, rows) => {
       if (err) {
         console.error(err);
-        res.status(500).send(err);
+        res.status(500).json(err);
       } else {
         res.json(rows);
       }
@@ -21,11 +21,11 @@ db.serialize(() => {
   });
 
   app.post('/tasks', (req, res) => {
-    const { text, completed } = req.body.task;
+    const { text, completed } = req.body;
     db.run('INSERT INTO tasks (text, completed) VALUES (?, ?)', [text, completed], function (err) {
       if (err) {
         console.error(err);
-        res.status(500).send(err);
+        res.status(500).json(err);
       } else {
         const task = { id: this.lastID, text, completed };
         res.status(201).json(task);
@@ -35,16 +35,21 @@ db.serialize(() => {
 
   app.put('/tasks/:id', (req, res) => {
     const id = req.params.id;
+  
+    if (!req.body.task) {
+      return res.status(400).json({ message: 'Task object is missing in the request body' });
+    }
+  
     const { text, completed } = req.body.task;
     db.run('UPDATE tasks SET text = ?, completed = ? WHERE id = ?', [text, completed, id], function (err) {
       if (err) {
         console.error(err);
-        res.status(500).send(err);
+        res.status(500).json(err);
       } else {
         db.get('SELECT * FROM tasks WHERE id = ?', [id], (err, row) => {
           if (err) {
             console.error(err);
-            res.status(500).send(err);
+            res.status(500).json(err);
           } else {
             res.json(row);
           }
@@ -58,7 +63,7 @@ db.serialize(() => {
     db.run('DELETE FROM tasks WHERE id = ?', [id], function (err) {
       if (err) {
         console.error(err);
-        res.status(500).send(err);
+        res.status(500).json(err);
       } else {
         res.json({ message: 'Task deleted successfully' });
       }
